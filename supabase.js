@@ -1,7 +1,7 @@
-const SUPABASE_URL = "https://helcoktbuyjjygldkcks.supabase.co/rest/v1/";
-const SUPABASE_KEY = "sb_publishable_v71aPCQyQDOPrN_73JqWJg_Epty07L4";
+const SUPABASE_URL = "https://helcoktbuyjjygldkcks.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhlbGNva3RidXlqanlnbGRrY2tzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDIwNjIsImV4cCI6MjA5NjMxODA2Mn0.1Mb8GKOHrFklBZ2RGYa304ECIhTtbwBuafDHbJfbtd0";
 
-const supabase = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
+window.supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
 );
