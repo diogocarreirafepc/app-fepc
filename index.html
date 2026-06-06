@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#07111f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="style.css">
+<title>FEPC Gestão Companhia</title>
+</head>
+<body>
+<main class="app">
+<header class="top">
+<div>
+<h1>FEPC <span>COMPANHIA</span></h1>
+<p>Gestão operacional para 250 utilizadores</p>
+</div>
+<button class="small" onclick="logout()">Sair</button>
+</header>
+
+<section class="card" id="loginCard">
+<h2>Entrar</h2>
+<p class="hint">Demo local. Para uso real com 250 utilizadores, ligar a Supabase/Postgres.</p>
+<label>Número mecanográfico</label>
+<input id="loginUser" placeholder="ex: 1136">
+<label>Perfil</label>
+<select id="loginRole">
+<option value="operacional">Operacional</option>
+<option value="chefe_equipa">Chefe de equipa</option>
+<option value="chefe_brigada">Chefe de brigada</option>
+<option value="comandante">Comandante/Admin</option>
+</select>
+<button class="primary" onclick="login()">Entrar</button>
+</section>
+
+<section id="dashboard" style="display:none">
+<section class="card hero">
+<div>
+<small>Utilizador</small>
+<h2 id="userTitle">Operacional</h2>
+<p id="roleTitle">Perfil</p>
+</div>
+<div class="pill">250 utilizadores</div>
+</section>
+
+<section class="grid cards">
+<article class="mini"><small>Operacionais</small><strong>250</strong></article>
+<article class="mini"><small>De serviço</small><strong id="onDuty">0</strong></article>
+<article class="mini"><small>Férias</small><strong id="vacations">0</strong></article>
+<article class="mini"><small>Ausências</small><strong id="absences">0</strong></article>
+<article class="mini"><small>Horas extra</small><strong id="debtHours">0h</strong></article>
+<article class="mini"><small>Relatórios</small><strong>CSV/PDF</strong></article>
+</section>
+
+<section class="card">
+<h3>Painel individual</h3>
+<div class="row"><span>Banco de horas</span><strong id="myBank">+0h</strong></div>
+<div class="row"><span>Trabalho suplementar</span><strong id="myOvertime">0h</strong></div>
+<div class="row"><span>Valor estimado em dívida</span><strong class="orange" id="myDebt">0,00 €</strong></div>
+<button class="primary" onclick="openPersonal()">Abrir controlo pessoal</button>
+</section>
+
+<section class="card adminOnly">
+<h3>Gestão da companhia</h3>
+<p class="hint">Visível para chefias e comando.</p>
+<div class="actions">
+<button onclick="showUsers()">Utilizadores</button>
+<button onclick="showSchedule()">Escala</button>
+<button onclick="showReports()">Relatórios</button>
+<button onclick="showSettings()">Definições</button>
+</div>
+</section>
+
+<section class="card" id="workArea">
+<h3>Resumo</h3>
+<p>Escolhe uma opção para gerir utilizadores, escala, relatórios ou definições.</p>
+</section>
+</section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
