@@ -1,235 +1,283 @@
 <!doctype html>
 <html lang="pt-PT">
+
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#07111f">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css">
-  <title>FEPC Gestão v14</title>
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="theme-color" content="#07111f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="stylesheet" href="style.css">
+    <title>FEPC Gestão v14</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
 </head>
+
 <body>
-  <main class="app">
-    <header class="top">
-      <div>
-        <h1>FEPC <span>Companhia</span></h1>
-        <p>Companhia + Horas + Vencimento</p>
-      </div>
-      <div style="display: flex; gap: 8px;">
-        <button class="small" id="btnProfile" style="display: none;" onclick="openProfileModal()">Perfil</button>
-        <button class="small" onclick="logout()">Sair</button>
-      </div>
-    </header>
+    <main class="app">
+        <header class="top">
+            <div>
+                <h1>FEPC <span>Companhia</span></h1>
+                <p>Companhia + Horas + Vencimento</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="small" id="btnProfile" style="display: none;"
+                    onclick="openProfileModal()">Perfil</button>
+                <button class="small" onclick="logout()">Sair</button>
+            </div>
+        </header>
 
-    <section class="card" id="loginCard">
-      <h2 id="authTitle">Entrar</h2>
-      <p class="hint" id="authHint">Acesso restrito. Usa as tuas credenciais.</p>
-      
-      <div id="registerFields" style="display: none;">
-        <label>Nome Completo</label>
-        <input id="regName" type="text" placeholder="ex: Diogo Carreira">
-        <label>Número Mecanográfico</label>
-        <input id="regNumber" type="text" placeholder="ex: 1136">
-      </div>
+        <section class="card" id="loginCard">
+            <h2 id="authTitle">Entrar</h2>
+            <p class="hint" id="authHint">Acesso restrito. Usa as tuas credenciais.</p>
 
-      <label>Email</label>
-      <input id="authEmail" type="email" placeholder="email@fepc.pt">
-      <label>Palavra-passe</label>
-      <input id="authPassword" type="password" placeholder="••••••••">
-      <div id="confirmPasswordField" style="display:none;">
-        <label>Confirmar Palavra-passe</label>
-        <input id="authPasswordConfirm" type="password" placeholder="••••••••">
-      </div>
-      
-      <button class="primary" id="authBtn" onclick="handleAuth()">Entrar</button>
-      <button class="small" id="toggleAuthBtn" style="margin-top: 10px; width: 100%;" onclick="toggleAuthMode()">Criar uma conta nova</button>
-    </section>
+            <div id="registerFields" style="display: none;">
+                <label>Nome Completo</label>
+                <input id="regName" type="text" placeholder="ex: Diogo Carreira">
+                <label>Número Mecanográfico</label>
+                <input id="regNumber" type="text" placeholder="ex: 1136">
+            </div>
 
-    <section class="card" id="pendingCard" style="display:none; text-align: center;">
-      <h2>Conta Pendente ⏳</h2>
-      <p style="margin-top: 10px;">O teu registo foi efetuado com sucesso.</p>
-      <p>Aguarda que o Comandante aprove a tua conta e te atribua o perfil correto.</p>
-    </section>
+            <label>Email</label>
+            <input id="authEmail" type="email" placeholder="email@fepc.pt">
+            <label>Palavra-passe</label>
+            <input id="authPassword" type="password" placeholder="••••••••">
+            <div id="confirmPasswordField" style="display:none;">
+                <label>Confirmar Palavra-passe</label>
+                <input id="authPasswordConfirm" type="password" placeholder="••••••••">
+            </div>
 
-    <section id="dashboard" style="display:none">
-      <section class="card hero">
-        <div>
-          <small>Utilizador</small>
-          <h2 id="userTitle"></h2>
-          <p id="roleTitle"></p>
-        </div>
-        <div class="pill">250 utilizadores</div>
-      </section>
+            <button class="primary" id="authBtn" onclick="handleAuth()">Entrar</button>
+            <button class="small" id="toggleAuthBtn" style="margin-top: 10px; width: 100%;"
+                onclick="toggleAuthMode()">Criar uma conta nova</button>
+        </section>
 
-      <nav class="tabs">
-        <button id="tab-pessoal" onclick="setTab('pessoal')">Pessoal</button>
-        <button id="tab-salario" onclick="setTab('salario')">Salário</button>
-        <button id="tab-recibo" onclick="setTab('recibo')">Recibo</button>
-        <button id="tab-companhia" class="adminOnly" onclick="setTab('companhia')">Companhia</button>
-      </nav>
+        <section class="card" id="pendingCard" style="display:none; text-align: center;">
+            <h2>Conta Pendente ⏳</h2>
+            <p style="margin-top: 10px;">O teu registo foi efetuado com sucesso.</p>
+            <p>Aguarda que o Comandante aprove a tua conta e te atribua o perfil correto.</p>
+        </section>
 
-      <section id="pessoal" class="tab">
-        <section class="card controls">
-          <div><label>Ano</label><select id="yearSelect" onchange="changePeriod()"></select></div>
-          <div><label>Mês</label><select id="monthSelect" onchange="changePeriod()"></select></div>
-        </section>
-        <section class="card hero">
-          <div><small>Período</small><h2 id="periodTitle"></h2><p id="targetInfo"></p></div>
-          <div class="pill" id="bankHours">+0h</div>
-        </section>
-        <section class="grid cards">
-          <article class="mini"><small>Total trabalhado</small><strong id="totalHours">0h</strong></article>
-          <article class="mini"><small>Horas necessárias</small><strong id="targetHours">0h</strong></article>
-          <article class="mini"><small>Noites</small><strong id="nightHours">0h</strong></article>
-          <article class="mini"><small>Extra 125%</small><strong id="extra125">0h</strong></article>
-          <article class="mini"><small>Extra 137,5%</small><strong id="extra1375">0h</strong></article>
-          <article class="mini"><small>Extra/Feriado 150%</small><strong id="holiday150">0h</strong></article>
-          <article class="mini"><small>Férias</small><strong id="vacationDaysCount">0</strong></article>
-          <article class="mini"><small>Feriados</small><strong id="holidayDaysCount">0</strong></article>
-          <article class="mini"><small>Compensações</small><strong id="compDaysCount">0</strong></article>
-        </section>
-        <section class="card">
-          <h3>Calendário</h3>
-          <div class="week"><span>SEG</span><span>TER</span><span>QUA</span><span>QUI</span><span>SEX</span><span>SÁB</span><span>DOM</span></div>
-          <div class="calendar" id="calendar"></div>
-        </section>
-        <section class="card">
-          <h3>Escolher turno / férias</h3>
-          <p class="hint">Carga mensal: dias úteis × 7h. Turnos contam horas reais.</p>
-          <div class="shift-buttons">
-            <button class="d" onclick="applyShift('D')">D<br><small>12h</small></button>
-            <button class="n" onclick="applyShift('N')">N<br><small>12h</small></button>
-            <button class="f" onclick="applyShift('F')">F<br><small>Folga</small></button>
-            <button class="vac" onclick="applyShift('FERIAS')">FÉRIAS<br><small>-7h</small></button>
-            <button class="n4" onclick="applyShift('N4')">N4<br><small>4h</small></button>
-            <button class="n8" onclick="applyShift('N8')">N8<br><small>8h</small></button>
-            <button class="d7" onclick="applyShift('D7')">D7<br><small>7h</small></button>
-            <button class="fer" onclick="applyShift('FER')">FER<br><small>150%</small></button>
-            <button class="c" onclick="applyShift('C')">C<br><small>-12h</small></button>
-            <button class="clear" onclick="applyShift('')">Limpar</button>
-          </div>
-        </section>
-        <section class="card">
-          <h3>Horas extra manuais</h3>
-          <p id="selectedDayLabel" class="hint">Nenhum dia selecionado.</p>
-          <div class="extra-grid">
-            <div><label>Extra 125%</label><input id="manual125" type="number" step="0.5" min="0" onchange="saveManualExtras()"></div>
-            <div><label>Extra 137,5%</label><input id="manual1375" type="number" step="0.5" min="0" onchange="saveManualExtras()"></div>
-            <div><label>Extra 150%</label><input id="manual150" type="number" step="0.5" min="0" onchange="saveManualExtras()"></div>
-          </div>
-        </section>
-      </section>
+        <section id="dashboard" style="display:none">
+            <section class="card hero">
+                <div>
+                    <small>Utilizador</small>
+                    <h2 id="userTitle"></h2>
+                    <p id="roleTitle"></p>
+                </div>
+                <div class="pill">250 utilizadores</div>
+            </section>
 
-      <section id="salario" class="tab" style="display:none">
-        <section class="card">
-          <h3>Remuneração fixa</h3>
-          <div class="row"><span>Ordenado base</span><strong id="fixedBaseSalary"></strong></div>
-          <div class="row"><span>Suplementos fixos</span><strong id="fixedSupplementsValue"></strong></div>
-          <div class="row total"><span>Total fixo bruto</span><strong id="fixedGrossTotal"></strong></div>
-        </section>
-        <section class="card overtime">
-          <h3>Trabalho suplementar</h3>
-          <div class="row"><span>Horas 125%</span><strong id="overtime125Detail"></strong></div>
-          <div class="row"><span>Horas 137,5%</span><strong id="overtime1375Detail"></strong></div>
-          <div class="row"><span>Horas 150%</span><strong id="overtime150Detail"></strong></div>
-          <div class="row total"><span>Total suplementar</span><strong class="orange" id="overtimeTotalValue"></strong></div>
-        </section>
-        <section class="card">
-          <h3>Descontos</h3>
-          <p class="hint">ADSE e sindicato só sobre ordenado base.</p>
-          <div class="row"><span>ADSE</span><strong id="adse"></strong></div>
-          <div class="row"><span>Segurança Social</span><strong id="ss"></strong></div>
-          <div class="row"><span>IRS</span><strong id="irs"></strong></div>
-          <div class="row"><span>Sindicato</span><strong id="sindicato"></strong></div>
-          <div class="row total"><span>Total descontos</span><strong id="totalDesc"></strong></div>
-        </section>
-        <section class="card result">
-          <h3>Resultado</h3>
-          <div class="row"><span>Total bruto fixo</span><strong id="resultFixedGross"></strong></div>
-          <div class="row"><span>Total bruto suplementar</span><strong id="resultOvertimeGross"></strong></div>
-          <div class="row"><span>Total bruto geral</span><strong id="totalGross"></strong></div>
-          <div class="row"><span>Total descontos</span><strong id="resultDiscounts"></strong></div>
-          <div class="row total"><span>Total líquido estimado</span><strong class="green" id="netPay"></strong></div>
-        </section>
-        <section class="card">
-          <h3>Definições</h3>
-          <div class="extra-grid">
-            <div><label>Ordenado base mensal</label><input id="baseMonthlySalaryInput" type="number" step="0.01" onchange="saveSettings()"></div>
-            <div><label>Suplementos fixos</label><input id="fixedSupplementsInput" type="number" step="0.01" onchange="saveSettings()"></div>
-            <div><label>Valor/hora base</label><input id="baseRateInput" type="number" step="0.01" onchange="saveSettings()"></div>
-            <div><label>Valor/hora com suplementos</label><input id="suppRateInput" type="number" step="0.01" onchange="saveSettings()"></div>
-            <div><label>ADSE %</label><input id="adseInput" type="number" step="0.01" onchange="saveSettings()"></div>
-            <div><label>SS %</label><input id="ssInput" type="number" step="0.01" onchange="saveSettings()"></div>
-            <div><label>IRS %</label><input id="irsInput" type="number" step="0.01" onchange="saveSettings()"></div>
-            <div><label>Sindicato %</label><input id="unionInput" type="number" step="0.01" onchange="saveSettings()"></div>
-            <div><label>Feriados úteis no mês</label><input id="holidaysInput" type="number" step="1" onchange="saveSettings()"></div>
-            <div><label>Dias férias no mês</label><input id="vacationDaysInput" type="number" step="1" onchange="saveSettings()"></div>
-          </div>
-        </section>
-      </section>
+            <nav class="tabs">
+                <button id="tab-pessoal" onclick="setTab('pessoal')">Pessoal</button>
+                <button id="tab-salario" onclick="setTab('salario')">Salário</button>
+                <button id="tab-recibo" onclick="setTab('recibo')">Recibo</button>
+                <button id="tab-companhia" class="adminOnly" onclick="setTab('companhia')">Companhia</button>
+            </nav>
 
-      <section id="recibo" class="tab" style="display:none">
-        <section class="card receipt">
-          <h3>Recibo / valor pago</h3>
-          <div class="extra-grid">
-            <div><label>Bruto pago</label><input id="paidGross" type="number" step="0.01" onchange="saveReceiptValues()"></div>
-            <div><label>Líquido pago</label><input id="paidNet" type="number" step="0.01" onchange="saveReceiptValues()"></div>
-            <div><label>Horas extra pagas 125%</label><input id="paidExtra125" type="number" step="0.5" onchange="saveReceiptValues()"></div>
-            <div><label>Horas extra pagas 137,5%</label><input id="paidExtra1375" type="number" step="0.5" onchange="saveReceiptValues()"></div>
-            <div><label>Horas pagas 150%</label><input id="paidExtra150" type="number" step="0.5" onchange="saveReceiptValues()"></div>
-          </div>
-          <div class="row total"><span>Diferença bruta</span><strong id="grossDebt"></strong></div>
-          <div class="row total"><span>Diferença líquida</span><strong id="netDebt"></strong></div>
-          <div class="row"><span>Horas 125% em falta</span><strong id="missing125"></strong></div>
-          <div class="row"><span>Horas 137,5% em falta</span><strong id="missing1375"></strong></div>
-          <div class="row"><span>Horas 150% em falta</span><strong id="missing150"></strong></div>
-        </section>
-      </section>
+            <section id="pessoal" class="tab">
+                <section class="card controls">
+                    <div><label>Ano</label><select id="yearSelect" onchange="changePeriod()"></select></div>
+                    <div><label>Mês</label><select id="monthSelect" onchange="changePeriod()"></select></div>
+                </section>
+                <section class="card hero">
+                    <div><small>Período</small>
+                        <h2 id="periodTitle"></h2>
+                        <p id="targetInfo"></p>
+                    </div>
+                    <div class="pill" id="bankHours">+0h</div>
+                </section>
+                <section class="grid cards">
+                    <article class="mini"><small>Total trabalhado</small><strong id="totalHours">0h</strong></article>
+                    <article class="mini"><small>Horas necessárias</small><strong id="targetHours">0h</strong></article>
+                    <article class="mini"><small>Noites</small><strong id="nightHours">0h</strong></article>
+                    <article class="mini"><small>Extra 125%</small><strong id="extra125">0h</strong></article>
+                    <article class="mini"><small>Extra 137,5%</small><strong id="extra1375">0h</strong></article>
+                    <article class="mini"><small>Extra/Feriado 150%</small><strong id="holiday150">0h</strong></article>
+                    <article class="mini"><small>Férias</small><strong id="vacationDaysCount">0</strong></article>
+                    <article class="mini"><small>Feriados</small><strong id="holidayDaysCount">0</strong></article>
+                    <article class="mini"><small>Compensações</small><strong id="compDaysCount">0</strong></article>
+                </section>
+                <section class="card">
+                    <h3>Calendário</h3>
+                    <div class="week">
+                        <span>SEG</span><span>TER</span><span>QUA</span><span>QUI</span><span>SEX</span><span>SÁB</span><span>DOM</span>
+                    </div>
+                    <div class="calendar" id="calendar"></div>
+                </section>
+                <section class="card">
+                    <h3>Escolher turno / férias</h3>
+                    <p class="hint">Carga mensal: dias úteis × 7h. Turnos contam horas reais.</p>
+                    <div class="shift-buttons">
+                        <button class="d" onclick="applyShift('D')">D<br><small>12h</small></button>
+                        <button class="n" onclick="applyShift('N')">N<br><small>12h</small></button>
+                        <button class="f" onclick="applyShift('F')">F<br><small>Folga</small></button>
+                        <button class="vac" onclick="applyShift('FERIAS')">FÉRIAS<br><small>-7h</small></button>
+                        <button class="n4" onclick="applyShift('N4')">N4<br><small>4h</small></button>
+                        <button class="n8" onclick="applyShift('N8')">N8<br><small>8h</small></button>
+                        <button class="d7" onclick="applyShift('D7')">D7<br><small>7h</small></button>
+                        <button class="fer" onclick="applyShift('FER')">FER<br><small>150%</small></button>
+                        <button class="c" onclick="applyShift('C')">C<br><small>-12h</small></button>
+                        <button class="clear" onclick="applyShift('')">Limpar</button>
+                    </div>
+                </section>
+                <section class="card">
+                    <h3>Horas extra manuais</h3>
+                    <p id="selectedDayLabel" class="hint">Nenhum dia selecionado.</p>
+                    <div class="extra-grid">
+                        <div><label>Extra 125%</label><input id="manual125" type="number" step="0.5" min="0"
+                                onchange="saveManualExtras()"></div>
+                        <div><label>Extra 137,5%</label><input id="manual1375" type="number" step="0.5" min="0"
+                                onchange="saveManualExtras()"></div>
+                        <div><label>Extra 150%</label><input id="manual150" type="number" step="0.5" min="0"
+                                onchange="saveManualExtras()"></div>
+                    </div>
+                </section>
+            </section>
 
-      <section id="companhia" class="tab" style="display:none">
-        <section class="grid cards">
-          <article class="mini"><small>Operacionais</small><strong>250</strong></article>
-          <article class="mini"><small>Ativos</small><strong id="onDuty">0</strong></article>
-          <article class="mini"><small>Pendentes</small><strong id="vacations">0</strong></article>
-          <article class="mini"><small>Ausências</small><strong id="absences">0</strong></article>
-          <article class="mini"><small>Horas extra</small><strong id="companyOvertime">0h</strong></article>
-          <article class="mini"><small>Dívida</small><strong id="companyDebt">0,00 €</strong></article>
-        </section>
-        <section class="card adminOnly">
-          <h3>Gestão companhia</h3>
-          <div class="actions">
-            <button onclick="showUsers()">Utilizadores</button>
-            <button onclick="showSchedule()">Escala</button>
-            <button onclick="showReports()">Relatórios</button>
-            <button onclick="showSettings()">Definições</button>
-          </div>
-        </section>
-        <section class="card" id="workArea">
-          <h3>Resumo</h3><p>Escolhe uma opção.</p>
-        </section>
-      </section>
-    </section>
+            <section id="salario" class="tab" style="display:none">
+                <section class="card">
+                    <h3>Remuneração fixa</h3>
+                    <div class="row"><span>Ordenado base</span><strong id="fixedBaseSalary"></strong></div>
+                    <div class="row"><span>Suplementos fixos</span><strong id="fixedSupplementsValue"></strong></div>
+                    <div class="row total"><span>Total fixo bruto</span><strong id="fixedGrossTotal"></strong></div>
+                    <div class="row"><span>Subsídio de refeição</span><strong id="mealAllowanceValue"></strong></div>
+                    <div class="row"><span>Supl. Bombeiro Sapador</span><strong id="firefighterAllowanceValue"></strong></div>
+                    <div class="row"><span>Supl. Trabalho por Turnos</span><strong id="shiftAllowanceValue"></strong></div>
+                </section>
+                <section class="card overtime">
+                    <h3>Trabalho suplementar</h3>
+                    <div class="row"><span>Horas 125%</span><strong id="overtime125Detail"></strong></div>
+                    <div class="row"><span>Horas 137,5%</span><strong id="overtime1375Detail"></strong></div>
+                    <div class="row"><span>Horas 150%</span><strong id="overtime150Detail"></strong></div>
+                    <div class="row total"><span>Total suplementar</span><strong class="orange"
+                            id="overtimeTotalValue"></strong></div>
+                </section>
+                <section class="card">
+                    <h3>Descontos</h3>
+                    <p class="hint">ADSE e sindicato só sobre ordenado base.</p>
+                    <div class="row"><span>ADSE</span><strong id="adse"></strong></div>
+                    <div class="row"><span>Segurança Social</span><strong id="ss"></strong></div>
+                    <div class="row"><span>IRS</span><strong id="irs"></strong></div>
+                    <div class="row"><span>Sindicato</span><strong id="sindicato"></strong></div>
+                    <div class="row total"><span>Total descontos</span><strong id="totalDesc"></strong></div>
+                </section>
+                <section class="card result">
+                    <h3>Resultado</h3>
+                    <div class="row"><span>Total bruto fixo</span><strong id="resultFixedGross"></strong></div>
+                    <div class="row"><span>Total bruto suplementar</span><strong id="resultOvertimeGross"></strong>
+                    </div>
+                    <div class="row"><span>Total bruto geral</span><strong id="totalGross"></strong></div>
+                    <div class="row"><span>Total descontos</span><strong id="resultDiscounts"></strong></div>
+                    <div class="row total"><span>Total líquido estimado</span><strong class="green"
+                            id="netPay"></strong></div>
+                </section>
+                <section class="card">
+                    <h3>Definições</h3>
+                    <div class="extra-grid">
+                        <div><label>Ordenado base mensal</label><input id="baseMonthlySalaryInput" type="number"
+                                step="0.01" onchange="saveSettings()"></div>
+                        <div>
+                            <label>Subsídio de refeição</label>
+                            <input id="mealAllowanceInput" type="number" step="0.01" onchange="saveSettings()">
+                        </div>
+                        <div>
+                            <label>Supl. Condição Bombeiro Sapador</label>
+                            <input id="firefighterAllowanceInput" type="number" step="0.01" onchange="saveSettings()">
+                        </div>
 
-    <section class="card" id="profileModal" style="display:none; position: fixed; top: 15%; left: 5%; right: 5%; z-index: 100; border: 1px solid var(--orange);">
-      <h3>Editar Perfil</h3>
-      <label>Nome Completo</label>
-      <input id="editName" type="text">
-      <label>Email</label>
-      <input id="editEmail" type="email">
-      <label>Nova Palavra-passe (deixa em branco para manter a atual)</label>
-      <input id="editPassword" type="password">
-      <label>Confirmar Nova Palavra-passe</label>
-      <input id="editPasswordConfirm" type="password">
-      <div style="display: flex; gap: 10px; margin-top: 15px;">
-        <button class="primary" style="margin-top: 0; width: 100%;" onclick="saveProfile()">Guardar</button>
-        <button class="small" style="margin-top: 0; width: 100%;" onclick="document.getElementById('profileModal').style.display='none'">Cancelar</button>
-      </div>
-    </section>
-  </main>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js"></script>
+                        <div>
+                            <label>Supl. Trabalho por Turnos</label>
+                            <input id="shiftAllowanceInput" type="number" step="0.01" onchange="saveSettings()">
+                        </div>
+                        <div><label>Valor/hora base</label><input id="baseRateInput" type="number" step="0.01"
+                                onchange="saveSettings()"></div>
+                        <div><label>Valor/hora com suplementos</label><input id="suppRateInput" type="number"
+                                step="0.01" onchange="saveSettings()"></div>
+                        <div><label>ADSE %</label><input id="adseInput" type="number" step="0.01"
+                                onchange="saveSettings()"></div>
+                        <div><label>SS %</label><input id="ssInput" type="number" step="0.01" onchange="saveSettings()">
+                        </div>
+                        <div><label>IRS %</label><input id="irsInput" type="number" step="0.01"
+                                onchange="saveSettings()"></div>
+                        <div><label>Sindicato %</label><input id="unionInput" type="number" step="0.01"
+                                onchange="saveSettings()"></div>
+                        <div><label>Feriados úteis no mês</label><input id="holidaysInput" type="number" step="1"
+                                onchange="saveSettings()"></div>
+                        <div><label>Dias férias no mês</label><input id="vacationDaysInput" type="number" step="1"
+                                onchange="saveSettings()"></div>
+                    </div>
+                </section>
+            </section>
+
+            <section id="recibo" class="tab" style="display:none">
+                <section class="card receipt">
+                    <h3>Recibo / valor pago</h3>
+                    <div class="extra-grid">
+                        <div><label>Bruto pago</label><input id="paidGross" type="number" step="0.01"
+                                onchange="saveReceiptValues()"></div>
+                        <div><label>Líquido pago</label><input id="paidNet" type="number" step="0.01"
+                                onchange="saveReceiptValues()"></div>
+                        <div><label>Horas extra pagas 125%</label><input id="paidExtra125" type="number" step="0.5"
+                                onchange="saveReceiptValues()"></div>
+                        <div><label>Horas extra pagas 137,5%</label><input id="paidExtra1375" type="number" step="0.5"
+                                onchange="saveReceiptValues()"></div>
+                        <div><label>Horas pagas 150%</label><input id="paidExtra150" type="number" step="0.5"
+                                onchange="saveReceiptValues()"></div>
+                    </div>
+                    <div class="row total"><span>Diferença bruta</span><strong id="grossDebt"></strong></div>
+                    <div class="row total"><span>Diferença líquida</span><strong id="netDebt"></strong></div>
+                    <div class="row"><span>Horas 125% em falta</span><strong id="missing125"></strong></div>
+                    <div class="row"><span>Horas 137,5% em falta</span><strong id="missing1375"></strong></div>
+                    <div class="row"><span>Horas 150% em falta</span><strong id="missing150"></strong></div>
+                </section>
+            </section>
+
+            <section id="companhia" class="tab" style="display:none">
+                <section class="grid cards">
+                    <article class="mini"><small>Operacionais</small><strong>250</strong></article>
+                    <article class="mini"><small>Ativos</small><strong id="onDuty">0</strong></article>
+                    <article class="mini"><small>Pendentes</small><strong id="vacations">0</strong></article>
+                    <article class="mini"><small>Ausências</small><strong id="absences">0</strong></article>
+                    <article class="mini"><small>Horas extra</small><strong id="companyOvertime">0h</strong></article>
+                    <article class="mini"><small>Dívida</small><strong id="companyDebt">0,00 €</strong></article>
+                </section>
+                <section class="card adminOnly">
+                    <h3>Gestão companhia</h3>
+                    <div class="actions">
+                        <button onclick="showUsers()">Utilizadores</button>
+                        <button onclick="showSchedule()">Escala</button>
+                        <button onclick="showReports()">Relatórios</button>
+                        <button onclick="showSettings()">Definições</button>
+                    </div>
+                </section>
+                <section class="card" id="workArea">
+                    <h3>Resumo</h3>
+                    <p>Escolhe uma opção.</p>
+                </section>
+            </section>
+        </section>
+
+        <section class="card" id="profileModal"
+            style="display:none; position: fixed; top: 15%; left: 5%; right: 5%; z-index: 100; border: 1px solid var(--orange);">
+            <h3>Editar Perfil</h3>
+            <label>Nome Completo</label>
+            <input id="editName" type="text">
+            <label>Email</label>
+            <input id="editEmail" type="email">
+            <label>Nova Palavra-passe (deixa em branco para manter a atual)</label>
+            <input id="editPassword" type="password">
+            <label>Confirmar Nova Palavra-passe</label>
+            <input id="editPasswordConfirm" type="password">
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="primary" style="margin-top: 0; width: 100%;" onclick="saveProfile()">Guardar</button>
+                <button class="small" style="margin-top: 0; width: 100%;"
+                    onclick="document.getElementById('profileModal').style.display='none'">Cancelar</button>
+            </div>
+        </section>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
 </body>
+
 </html>
