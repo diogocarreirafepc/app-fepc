@@ -1,6 +1,6 @@
 {
-  "name": "FEPC Gestão Companhia",
-  "short_name": "FEPC Companhia",
+  "name": "FEPC Gestão v14",
+  "short_name": "FEPC v14",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#07111f",
