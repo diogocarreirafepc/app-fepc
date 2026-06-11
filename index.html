@@ -246,6 +246,18 @@
                         Exportar PDF mensal
                     </button>
                 </section>
+
+                <section class="card">
+                    <h3>Sincronização</h3>
+                    <p class="hint">Guarda ou recupera os dados deste mês no Supabase para usar noutro dispositivo.</p>
+
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button class="primary" onclick="saveMonthToCloud()">Enviar dados</button>
+                        <button class="small" onclick="loadMonthFromCloud()">Carregar dados</button>
+                    </div>
+
+                    <p id="syncStatus" class="hint" style="margin-top:10px;"></p>
+                </section>
             </section>
 
             <section id="companhia" class="tab" style="display:none">

@@ -613,5 +613,265 @@ function drawPdfBar(doc, label, value, max, x, y) {
     doc.rect(x + 45, y - 4, width, 5, "F");
 }
 
+function dbMonth() {
+  return selectedMonth + 1; // JS usa 0-11, BD usa 1-12
+}
+
+function dateForDb(day) {
+  const month = String(selectedMonth + 1).padStart(2, "0");
+  const d = String(day).padStart(2, "0");
+  return `${selectedYear}-${month}-${d}`;
+}
+
+function monthStartDate() {
+  return `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-01`;
+}
+
+function monthEndDate() {
+  const lastDay = daysInMonth(selectedYear, selectedMonth);
+  return `${selectedYear}-${String(selectedMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+}
+
+function setSyncStatus(message) {
+  const el = document.getElementById("syncStatus");
+  if (el) el.innerText = message;
+}
+
+async function saveMonthToCloud() {
+  if (!currentUser) {
+    alert("Tens de iniciar sessão primeiro.");
+    return;
+  }
+
+  try {
+    setSyncStatus("A enviar dados para o Supabase...");
+
+    saveMonth();
+
+    const fixedSupplements =
+      (+settings.mealAllowance || 0) +
+      (+settings.firefighterAllowance || 0) +
+      (+settings.shiftAllowance || 0);
+
+    // 1. Guardar definições mensais
+    const { error: settingsError } = await supabaseClient
+      .from("monthly_settings")
+      .upsert({
+        profile_id: currentUser.id,
+        year: selectedYear,
+        month: dbMonth(),
+        holidays: +(monthSettings.holidays || 0),
+        vacation_days: +(monthSettings.vacationDays || 0),
+
+        base_monthly_salary: +(settings.baseMonthlySalary || 0),
+        fixed_supplements: fixedSupplements,
+
+        meal_allowance: +(settings.mealAllowance || 0),
+        firefighter_allowance: +(settings.firefighterAllowance || 0),
+        shift_allowance: +(settings.shiftAllowance || 0),
+
+        base_rate: +(settings.baseRate || 0),
+        supplement_rate: +(settings.suppRate || 13.65),
+        adse_rate: +(settings.adseRate || 0),
+        ss_rate: +(settings.ssRate || 0),
+        irs_rate: +(settings.irsRate || 0),
+        union_rate: +(settings.unionRate || 0)
+      }, {
+        onConflict: "profile_id,year,month"
+      });
+
+    if (settingsError) throw settingsError;
+
+    // 2. Apagar turnos antigos desse mês na cloud
+    const { error: deleteShiftsError } = await supabaseClient
+      .from("shifts")
+      .delete()
+      .eq("profile_id", currentUser.id)
+      .gte("work_date", monthStartDate())
+      .lte("work_date", monthEndDate());
+
+    if (deleteShiftsError) throw deleteShiftsError;
+
+    // 3. Preparar turnos/extras para enviar
+    const shiftRows = [];
+
+    for (let day = 1; day <= daysInMonth(selectedYear, selectedMonth); day++) {
+      const shift = shifts[day] || "";
+      const extra = manualExtras[day] || {};
+
+      const e125 = +(extra.e125 || 0);
+      const e1375 = +(extra.e1375 || 0);
+      const e150 = +(extra.e150 || 0);
+
+      if (shift || e125 || e1375 || e150) {
+        shiftRows.push({
+          profile_id: currentUser.id,
+          work_date: dateForDb(day),
+          shift_type: shift || "MANUAL",
+          manual_125: e125,
+          manual_1375: e1375,
+          manual_150: e150
+        });
+      }
+    }
+
+    if (shiftRows.length > 0) {
+      const { error: insertShiftsError } = await supabaseClient
+        .from("shifts")
+        .insert(shiftRows);
+
+      if (insertShiftsError) throw insertShiftsError;
+    }
+
+    // 4. Guardar dados do recibo
+    const { error: payslipError } = await supabaseClient
+      .from("payslips")
+      .upsert({
+        profile_id: currentUser.id,
+        year: selectedYear,
+        month: dbMonth(),
+        gross_paid: +(receiptValues.paidGross || 0),
+        net_paid: +(receiptValues.paidNet || 0),
+        overtime_125_paid: +(receiptValues.paidExtra125 || 0),
+        overtime_1375_paid: +(receiptValues.paidExtra1375 || 0),
+        overtime_150_paid: +(receiptValues.paidExtra150 || 0)
+      }, {
+        onConflict: "profile_id,year,month"
+      });
+
+    if (payslipError) throw payslipError;
+
+    setSyncStatus("Dados enviados com sucesso.");
+    alert("Dados enviados para o Supabase com sucesso!");
+
+  } catch (error) {
+    console.error("Erro ao enviar dados:", error);
+    setSyncStatus("Erro ao enviar dados.");
+    alert("Erro ao enviar dados: " + error.message);
+  }
+}
+
+async function loadMonthFromCloud() {
+  if (!currentUser) {
+    alert("Tens de iniciar sessão primeiro.");
+    return;
+  }
+
+  try {
+    setSyncStatus("A carregar dados do Supabase...");
+
+    // 1. Carregar definições mensais
+    const { data: cloudSettings, error: settingsError } = await supabaseClient
+      .from("monthly_settings")
+      .select("*")
+      .eq("profile_id", currentUser.id)
+      .eq("year", selectedYear)
+      .eq("month", dbMonth())
+      .maybeSingle();
+
+    if (settingsError) throw settingsError;
+
+    if (cloudSettings) {
+      monthSettings = {
+        holidays: cloudSettings.holidays || 0,
+        vacationDays: cloudSettings.vacation_days ?? 1
+      };
+
+      settings = {
+        baseMonthlySalary: +(cloudSettings.base_monthly_salary || 1446.51),
+
+        mealAllowance: +(cloudSettings.meal_allowance || 0),
+        firefighterAllowance: +(cloudSettings.firefighter_allowance || 0),
+        shiftAllowance: +(cloudSettings.shift_allowance || 0),
+
+        baseRate: +(cloudSettings.base_rate || 9.54),
+        suppRate: +(cloudSettings.supplement_rate || 13.65),
+
+        hoursPerWeekday: 7,
+
+        adseRate: +(cloudSettings.adse_rate || 3.5),
+        ssRate: +(cloudSettings.ss_rate || 11),
+        irsRate: +(cloudSettings.irs_rate || 13.53),
+        unionRate: +(cloudSettings.union_rate || 0.65)
+      };
+
+      localStorage.setItem("fepc_v14_settings", JSON.stringify(settings));
+    }
+
+    // 2. Carregar turnos
+    const { data: cloudShifts, error: shiftsError } = await supabaseClient
+      .from("shifts")
+      .select("*")
+      .eq("profile_id", currentUser.id)
+      .gte("work_date", monthStartDate())
+      .lte("work_date", monthEndDate());
+
+    if (shiftsError) throw shiftsError;
+
+    shifts = {};
+    manualExtras = {};
+
+    if (cloudShifts) {
+      cloudShifts.forEach(row => {
+        const day = Number(row.work_date.split("-")[2]);
+
+        if (row.shift_type && row.shift_type !== "MANUAL") {
+          shifts[day] = row.shift_type;
+        }
+
+        const e125 = +(row.manual_125 || 0);
+        const e1375 = +(row.manual_1375 || 0);
+        const e150 = +(row.manual_150 || 0);
+
+        if (e125 || e1375 || e150) {
+          manualExtras[day] = {
+            e125,
+            e1375,
+            e150
+          };
+        }
+      });
+    }
+
+    // 3. Carregar recibo
+    const { data: cloudPayslip, error: payslipError } = await supabaseClient
+      .from("payslips")
+      .select("*")
+      .eq("profile_id", currentUser.id)
+      .eq("year", selectedYear)
+      .eq("month", dbMonth())
+      .maybeSingle();
+
+    if (payslipError) throw payslipError;
+
+    if (cloudPayslip) {
+      receiptValues = {
+        paidGross: +(cloudPayslip.gross_paid || 0),
+        paidNet: +(cloudPayslip.net_paid || 0),
+        paidExtra125: +(cloudPayslip.overtime_125_paid || 0),
+        paidExtra1375: +(cloudPayslip.overtime_1375_paid || 0),
+        paidExtra150: +(cloudPayslip.overtime_150_paid || 0)
+      };
+    } else {
+      receiptValues = {};
+    }
+
+    saveMonth();
+
+    loadSettingsInputs();
+    loadReceiptValues();
+    renderCalendar();
+    loadSelectedDayPanel();
+    calculate();
+
+    setSyncStatus("Dados carregados com sucesso.");
+    alert("Dados carregados do Supabase com sucesso!");
+
+  } catch (error) {
+    console.error("Erro ao carregar dados:", error);
+    setSyncStatus("Erro ao carregar dados.");
+    alert("Erro ao carregar dados: " + error.message);
+  }
+}
 // Arranca o fluxo verificando se alguém tem a sessão iniciada
 checkSession();
