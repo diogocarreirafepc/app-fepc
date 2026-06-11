@@ -72,6 +72,7 @@ function toggleAuthMode() {
     if (toggleBtn) {
         toggleBtn.innerText = isRegistering ? "Voltar ao Login" : "Criar Registo";
     }
+    document.getElementById("forgotPasswordLink").style.display = isRegistering ? "none" : "block";
 }
 
 async function handleAuth() {
@@ -872,6 +873,26 @@ async function loadMonthFromCloud() {
     setSyncStatus("Erro ao carregar dados.");
     alert("Erro ao carregar dados: " + error.message);
   }
+}
+
+async function resetPassword() {
+  const email = document.getElementById("authEmail").value.trim();
+
+  if (!email) {
+    alert("Escreva primeiro o seu email no campo de login.");
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin
+  });
+
+  if (error) {
+    alert("Erro ao enviar email de recuperação: " + error.message);
+    return;
+  }
+
+  alert("Foi enviado um email de recuperação da palavra-passe.");
 }
 // Arranca o fluxo verificando se alguém tem a sessão iniciada
 checkSession();

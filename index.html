@@ -46,7 +46,12 @@
                 <label>Confirmar Palavra-passe</label>
                 <input id="authPasswordConfirm" type="password" placeholder="••••••••">
             </div>
-
+            <p id="forgotPasswordLink" class="hint" style="text-align:center; margin-top:12px;">
+                <a href="#" onclick="resetPassword(); return false;"
+                    style="color: var(--orange); text-decoration: none;">
+                    Esqueceu-se da palavra-passe?
+                </a>
+            </p>
             <button class="primary" id="authBtn" onclick="handleAuth()">Entrar</button>
             <button class="small" id="toggleAuthBtn" style="margin-top: 10px; width: 100%;"
                 onclick="toggleAuthMode()">Criar uma conta nova</button>
