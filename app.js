@@ -19,6 +19,7 @@ let settings = JSON.parse(localStorage.getItem("fepc_v14_settings") || JSON.stri
 let selectedYear = Number(localStorage.getItem("fepc_v14_year") || 2026);
 let selectedMonth = Number(localStorage.getItem("fepc_v14_month") || 5);
 let selectedDay = null, shifts = {}, manualExtras = {}, monthSettings = {}, receiptValues = {};
+let lastCalc = {};
 
 // --- 4. SISTEMA DE AUTENTICAÇÃO E PERFIL ---
 async function checkSession() {
@@ -282,38 +283,39 @@ function saveManualExtras() {
 
 function loadSettingsInputs() {
     const vals = {
-        baseMonthlySalaryInput: settings.baseMonthlySalary, 
+        baseMonthlySalaryInput: settings.baseMonthlySalary,
         mealAllowanceInput: settings.mealAllowance,
         firefighterAllowanceInput: settings.firefighterAllowance,
-        shiftAllowanceInput: settings.shiftAllowance, 
-        baseRateInput: settings.baseRate, 
-        suppRateInput: settings.suppRate, 
-        adseInput: settings.adseRate, 
-        ssInput: settings.ssRate, 
-        irsInput: settings.irsRate, 
-        unionInput: settings.unionRate, 
-        holidaysInput: monthSettings.holidays || 0, 
+        shiftAllowanceInput: settings.shiftAllowance,
+        baseRateInput: settings.baseRate,
+        suppRateInput: settings.suppRate,
+        adseInput: settings.adseRate,
+        ssInput: settings.ssRate,
+        irsInput: settings.irsRate,
+        unionInput: settings.unionRate,
+        holidaysInput: monthSettings.holidays || 0,
         vacationDaysInput: monthSettings.vacationDays ?? 1
     };
     for (const id in vals) { let el = document.getElementById(id); if (el) el.value = vals[id] }
 }
 
 function saveSettings() {
-    settings = { 
-        baseMonthlySalary: +(document.getElementById("baseMonthlySalaryInput").value || 1446.51), 
-        mealAllowance:+(document.getElementById("mealAllowanceInput").value||0),
-        firefighterAllowance:+(document.getElementById("firefighterAllowanceInput").value||0),
-        shiftAllowance:+(document.getElementById("shiftAllowanceInput").value||0), 
-        baseRate: +(document.getElementById("baseRateInput").value || 9.54), 
-        suppRate: +(document.getElementById("suppRateInput").value || 13.65), 
-        hoursPerWeekday: 7, 
-        adseRate: +(document.getElementById("adseInput").value || 3.5), 
-        ssRate: +(document.getElementById("ssInput").value || 11), 
-        irsRate: +(document.getElementById("irsInput").value || 13.53), 
-        unionRate: +(document.getElementById("unionInput").value || 0.65) 
+    settings = {
+        baseMonthlySalary: +(document.getElementById("baseMonthlySalaryInput").value || 1446.51),
+        mealAllowance: +(document.getElementById("mealAllowanceInput").value || 0),
+        firefighterAllowance: +(document.getElementById("firefighterAllowanceInput").value || 0),
+        shiftAllowance: +(document.getElementById("shiftAllowanceInput").value || 0),
+        baseRate: +(document.getElementById("baseRateInput").value || 9.54),
+        suppRate: document.getElementById("suppRateInput") ? +(document.getElementById("suppRateInput").value || 13.65) : (settings.suppRate || 13.65),
+        hoursPerWeekday: 7,
+        adseRate: +(document.getElementById("adseInput").value || 3.5),
+        ssRate: +(document.getElementById("ssInput").value || 11),
+        irsRate: +(document.getElementById("irsInput").value || 13.53),
+        unionRate: +(document.getElementById("unionInput").value || 0.65)
     };
     monthSettings.holidays = +(document.getElementById("holidaysInput").value || 0);
     monthSettings.vacationDays = +(document.getElementById("vacationDaysInput").value || 0);
+    console.log("SETTINGS GUARDADAS:", settings);
     localStorage.setItem("fepc_v14_settings", JSON.stringify(settings)); saveMonth(); renderCalendar()
 }
 
@@ -332,51 +334,72 @@ function calculate() {
     for (const d in shifts) { const s = shifts[d], hours = shiftHours[s] || 0; totalWorkedRaw += hours; if (s === "FER") holidayShiftHours += hours; else shiftWorked += hours; night += nightHours[s] || 0 }
     for (const d in manualExtras) { const e = manualExtras[d] || {}; man125 += +(e.e125 || 0); man1375 += +(e.e1375 || 0); man150 += +(e.e150 || 0) }
     let needed = targetHours(), automaticExcess = Math.max(0, shiftWorked - needed), e125 = Math.min(automaticExcess, 1) + man125, e1375 = Math.max(0, automaticExcess - 1) + man1375, e150 = holidayShiftHours + man150, totalWorked = totalWorkedRaw + man125 + man1375 + man150, bank = totalWorked - needed;
-    let baseSalary = +settings.baseMonthlySalary || 0; let mealAllowance =+settings.mealAllowance || 0;
-    let firefighterAllowance =+settings.firefighterAllowance || 0;
-    let shiftAllowance =+settings.shiftAllowance || 0;
-    let fixedSupplements =mealAllowance +firefighterAllowance +shiftAllowance;
+    let baseSalary = +settings.baseMonthlySalary || 0; let mealAllowance = +settings.mealAllowance || 0;
+    let firefighterAllowance = +settings.firefighterAllowance || 0;
+    let shiftAllowance = +settings.shiftAllowance || 0;
+    let fixedSupplements = mealAllowance + firefighterAllowance + shiftAllowance;
     let overtime125Value = e125 * settings.suppRate * 1.25, overtime1375Value = e1375 * settings.suppRate * 1.375, overtime150Value = e150 * settings.suppRate * 1.5, overtimeTotal = overtime125Value + overtime1375Value + overtime150Value, fixedGross = baseSalary + fixedSupplements, gross = fixedGross + overtimeTotal, adse = baseSalary * settings.adseRate / 100, ss = gross * settings.ssRate / 100, irs = gross * settings.irsRate / 100, sindicato = baseSalary * settings.unionRate / 100, totalDesc = adse + ss + irs + sindicato, net = gross - totalDesc, paidGross = +(receiptValues.paidGross || 0), paidNet = +(receiptValues.paidNet || 0);
+    lastCalc = {
+        totalWorked,
+        needed,
+        bank,
+        e125,
+        e1375,
+        e150,
+        baseSalary,
+        mealAllowance,
+        firefighterAllowance,
+        shiftAllowance,
+        fixedSupplements,
+        fixedGross,
+        overtimeTotal,
+        gross,
+        totalDesc,
+        net,
+        grossDebt: paidGross > 0 ? gross - paidGross : 0,
+        netDebt: paidNet > 0 ? net - paidNet : 0
+    };
 
-    const map = { 
-        totalHours: h(totalWorked), 
-        targetHours: h(needed), 
-        nightHours: h(night), 
-        extra125: h(e125), 
-        extra1375: h(e1375), 
-        holiday150: h(e150), 
-        vacationDaysCount: vacationDaysInMonth(), 
-        holidayDaysCount: holidayDaysInMonth(), 
-        compDaysCount: compDaysInMonth(), 
-        bankHours: (bank >= 0 ? "+" : "") + h(bank), 
+    const map = {
+        totalHours: h(totalWorked),
+        targetHours: h(needed),
+        nightHours: h(night),
+        extra125: h(e125),
+        extra1375: h(e1375),
+        holiday150: h(e150),
+        vacationDaysCount: vacationDaysInMonth(),
+        holidayDaysCount: holidayDaysInMonth(),
+        compDaysCount: compDaysInMonth(),
+        bankHours: (bank >= 0 ? "+" : "") + h(bank),
         fixedBaseSalary: euro(baseSalary),
-        mealAllowanceValue:euro(mealAllowance),
-        firefighterAllowanceValue:euro(firefighterAllowance),
-        shiftAllowanceValue:euro(shiftAllowance),
-        fixedSupplementsValue: euro(fixedSupplements), 
-        fixedGrossTotal: euro(fixedGross), 
-        overtime125Detail: `${h(e125)} · ${euro(overtime125Value)}`, 
-        overtime1375Detail: `${h(e1375)} · ${euro(overtime1375Value)}`, 
-        overtime150Detail: `${h(e150)} · ${euro(overtime150Value)}`, 
-        overtimeTotalValue: euro(overtimeTotal), 
-        adse: euro(adse), 
-        ss: euro(ss), 
-        irs: euro(irs), 
-        sindicato: euro(sindicato), 
-        totalDesc: euro(totalDesc), 
-        resultFixedGross: euro(fixedGross), 
-        resultOvertimeGross: euro(overtimeTotal), 
-        totalGross: euro(gross), 
-        resultDiscounts: euro(totalDesc), 
-        netPay: euro(net), 
-        grossDebt: euro(paidGross > 0 ? gross - paidGross : 0), 
-        netDebt: euro(paidNet > 0 ? net - paidNet : 0), 
-        missing125: h(Math.max(0, e125 - (receiptValues.paidExtra125 || 0))), 
-        missing1375: h(Math.max(0, e1375 - (receiptValues.paidExtra1375 || 0))), 
-        missing150: h(Math.max(0, e150 - (receiptValues.paidExtra150 || 0))) 
-};
+        mealAllowanceValue: euro(mealAllowance),
+        firefighterAllowanceValue: euro(firefighterAllowance),
+        shiftAllowanceValue: euro(shiftAllowance),
+        fixedSupplementsValue: euro(fixedSupplements),
+        fixedGrossTotal: euro(fixedGross),
+        overtime125Detail: `${h(e125)} · ${euro(overtime125Value)}`,
+        overtime1375Detail: `${h(e1375)} · ${euro(overtime1375Value)}`,
+        overtime150Detail: `${h(e150)} · ${euro(overtime150Value)}`,
+        overtimeTotalValue: euro(overtimeTotal),
+        adse: euro(adse),
+        ss: euro(ss),
+        irs: euro(irs),
+        sindicato: euro(sindicato),
+        totalDesc: euro(totalDesc),
+        resultFixedGross: euro(fixedGross),
+        resultOvertimeGross: euro(overtimeTotal),
+        totalGross: euro(gross),
+        resultDiscounts: euro(totalDesc),
+        netPay: euro(net),
+        grossDebt: euro(paidGross > 0 ? gross - paidGross : 0),
+        netDebt: euro(paidNet > 0 ? net - paidNet : 0),
+        missing125: h(Math.max(0, e125 - (receiptValues.paidExtra125 || 0))),
+        missing1375: h(Math.max(0, e1375 - (receiptValues.paidExtra1375 || 0))),
+        missing150: h(Math.max(0, e150 - (receiptValues.paidExtra150 || 0)))
+    };
     for (const id in map) setText(id, map[id]);
     renderCompany(paidGross > 0 ? gross - paidGross : 0, e125 + e1375 + e150);
+    renderCharts();
 }
 
 function setText(id, v) { let el = document.getElementById(id); if (el) el.innerText = v }
@@ -459,6 +482,136 @@ function euro(v) { return new Intl.NumberFormat("pt-PT", { style: "currency", cu
 
 // Registo do Service Worker para cache (App instalável / PWA)
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js");
+
+function renderBar(label, value, max, suffix = "") {
+    const percent = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+
+    return `
+    <div style="margin-bottom:12px;">
+      <div class="row">
+        <span>${label}</span>
+        <strong>${value.toFixed(2)}${suffix}</strong>
+      </div>
+      <div style="height:12px;background:#1d2938;border-radius:20px;overflow:hidden;">
+        <div style="height:12px;width:${percent}%;background:var(--orange);border-radius:20px;"></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderCharts() {
+    if (!lastCalc.totalWorked && !lastCalc.needed) return;
+
+    const hoursChart = document.getElementById("hoursChart");
+    const valuesChart = document.getElementById("valuesChart");
+
+    if (hoursChart) {
+        const maxHours = Math.max(
+            lastCalc.totalWorked || 0,
+            lastCalc.needed || 0,
+            Math.abs(lastCalc.bank || 0),
+            1
+        );
+
+        hoursChart.innerHTML = `
+      <h4>Horas</h4>
+      ${renderBar("Horas necessárias", lastCalc.needed || 0, maxHours, "h")}
+      ${renderBar("Horas trabalhadas", lastCalc.totalWorked || 0, maxHours, "h")}
+      ${renderBar("Banco / diferença", Math.abs(lastCalc.bank || 0), maxHours, "h")}
+    `;
+    }
+
+    if (valuesChart) {
+        const maxValue = Math.max(
+            lastCalc.fixedGross || 0,
+            lastCalc.overtimeTotal || 0,
+            lastCalc.totalDesc || 0,
+            lastCalc.net || 0,
+            1
+        );
+
+        valuesChart.innerHTML = `
+      <h4>Valores</h4>
+      ${renderBar("Bruto fixo", lastCalc.fixedGross || 0, maxValue, "€")}
+      ${renderBar("Horas extra", lastCalc.overtimeTotal || 0, maxValue, "€")}
+      ${renderBar("Descontos", lastCalc.totalDesc || 0, maxValue, "€")}
+      ${renderBar("Líquido estimado", lastCalc.net || 0, maxValue, "€")}
+    `;
+    }
+}
+
+function generateMonthlyPDF() {
+    if (!lastCalc || !currentUser) {
+        alert("Sem dados para exportar.");
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const monthName = MONTHS[selectedMonth];
+    const fileName = `FEPC_${currentUser.n}_${monthName}_${selectedYear}.pdf`;
+
+    doc.setFontSize(18);
+    doc.text("FEPC Gestão - Relatório Mensal", 14, 18);
+
+    doc.setFontSize(11);
+    doc.text(`Utilizador: ${currentUser.n} - ${currentUser.name}`, 14, 30);
+    doc.text(`Período: ${monthName} ${selectedYear}`, 14, 38);
+
+    doc.setFontSize(14);
+    doc.text("Resumo de Horas", 14, 52);
+
+    doc.setFontSize(11);
+    doc.text(`Horas necessárias: ${h(lastCalc.needed)}`, 14, 62);
+    doc.text(`Horas trabalhadas: ${h(lastCalc.totalWorked)}`, 14, 70);
+    doc.text(`Banco/Diferença: ${h(lastCalc.bank)}`, 14, 78);
+    doc.text(`Extra 125%: ${h(lastCalc.e125)}`, 14, 86);
+    doc.text(`Extra 137,5%: ${h(lastCalc.e1375)}`, 14, 94);
+    doc.text(`Extra 150%: ${h(lastCalc.e150)}`, 14, 102);
+
+    doc.setFontSize(14);
+    doc.text("Resumo Salarial", 14, 120);
+
+    doc.setFontSize(11);
+    doc.text(`Ordenado base: ${euro(lastCalc.baseSalary)}`, 14, 130);
+    doc.text(`Subsídio de refeição: ${euro(lastCalc.mealAllowance)}`, 14, 138);
+    doc.text(`Supl. Bombeiro Sapador: ${euro(lastCalc.firefighterAllowance)}`, 14, 146);
+    doc.text(`Supl. Trabalho por Turnos: ${euro(lastCalc.shiftAllowance)}`, 14, 154);
+    doc.text(`Total fixo bruto: ${euro(lastCalc.fixedGross)}`, 14, 162);
+    doc.text(`Horas extra: ${euro(lastCalc.overtimeTotal)}`, 14, 170);
+    doc.text(`Total bruto: ${euro(lastCalc.gross)}`, 14, 178);
+    doc.text(`Descontos: ${euro(lastCalc.totalDesc)}`, 14, 186);
+    doc.text(`Líquido estimado: ${euro(lastCalc.net)}`, 14, 194);
+
+    doc.setFontSize(14);
+    doc.text("Gráfico de Horas", 14, 212);
+
+    const maxHours = Math.max(lastCalc.needed, lastCalc.totalWorked, Math.abs(lastCalc.bank), 1);
+
+    drawPdfBar(doc, "Necessárias", lastCalc.needed, maxHours, 14, 222);
+    drawPdfBar(doc, "Trabalhadas", lastCalc.totalWorked, maxHours, 14, 234);
+    drawPdfBar(doc, "Diferença", Math.abs(lastCalc.bank), maxHours, 14, 246);
+
+    doc.setFontSize(14);
+    doc.text("Gráfico de Valores", 14, 264);
+
+    const maxValue = Math.max(lastCalc.fixedGross, lastCalc.overtimeTotal, lastCalc.totalDesc, lastCalc.net, 1);
+
+    drawPdfBar(doc, "Fixo", lastCalc.fixedGross, maxValue, 14, 274);
+    drawPdfBar(doc, "Extra", lastCalc.overtimeTotal, maxValue, 14, 286);
+
+    doc.save(fileName);
+}
+
+function drawPdfBar(doc, label, value, max, x, y) {
+    const width = max > 0 ? (value / max) * 80 : 0;
+
+    doc.setFontSize(10);
+    doc.text(`${label}: ${value.toFixed(2)}`, x, y);
+    doc.rect(x + 45, y - 4, 80, 5);
+    doc.rect(x + 45, y - 4, width, 5, "F");
+}
 
 // Arranca o fluxo verificando se alguém tem a sessão iniciada
 checkSession();

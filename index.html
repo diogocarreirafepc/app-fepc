@@ -142,8 +142,10 @@
                     <div class="row"><span>Suplementos fixos</span><strong id="fixedSupplementsValue"></strong></div>
                     <div class="row total"><span>Total fixo bruto</span><strong id="fixedGrossTotal"></strong></div>
                     <div class="row"><span>Subsídio de refeição</span><strong id="mealAllowanceValue"></strong></div>
-                    <div class="row"><span>Supl. Bombeiro Sapador</span><strong id="firefighterAllowanceValue"></strong></div>
-                    <div class="row"><span>Supl. Trabalho por Turnos</span><strong id="shiftAllowanceValue"></strong></div>
+                    <div class="row"><span>Supl. Bombeiro Sapador</span><strong id="firefighterAllowanceValue"></strong>
+                    </div>
+                    <div class="row"><span>Supl. Trabalho por Turnos</span><strong id="shiftAllowanceValue"></strong>
+                    </div>
                 </section>
                 <section class="card overtime">
                     <h3>Trabalho suplementar</h3>
@@ -231,6 +233,19 @@
                     <div class="row"><span>Horas 137,5% em falta</span><strong id="missing1375"></strong></div>
                     <div class="row"><span>Horas 150% em falta</span><strong id="missing150"></strong></div>
                 </section>
+                <section class="card">
+                    <h3>Gráficos mensais</h3>
+                    <div id="hoursChart"></div>
+                    <div id="valuesChart" style="margin-top:20px;"></div>
+                </section>
+
+                <section class="card">
+                    <h3>Exportar relatório</h3>
+                    <p class="hint">Gera um PDF com o resumo mensal de horas, valores e diferenças.</p>
+                    <button class="primary" onclick="generateMonthlyPDF()">
+                        Exportar PDF mensal
+                    </button>
+                </section>
             </section>
 
             <section id="companhia" class="tab" style="display:none">
@@ -277,6 +292,7 @@
         </section>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="app.js"></script>
 </body>
 
